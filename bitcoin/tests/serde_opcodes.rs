@@ -199,7 +199,7 @@ fn serde_regression_opcodes() {
         OP_NOP1,
         OP_CLTV,
         OP_CSV,
-        OP_NOP4,
+        OP_CHECKTEMPLATEVERIFY,
         OP_NOP5,
         OP_NOP6,
         OP_NOP7,
