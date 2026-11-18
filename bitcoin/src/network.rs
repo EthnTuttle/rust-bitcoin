@@ -52,7 +52,7 @@ impl From<Network> for NetworkKind {
 
         match n {
             Bitcoin => NetworkKind::Main,
-            Testnet | Testnet4 | Signet | Regtest => NetworkKind::Test,
+            Testnet | Testnet4 | Testnet5 | Signet | Regtest => NetworkKind::Test,
         }
     }
 }
@@ -80,6 +80,9 @@ pub enum Network {
     /// Bitcoin's testnet4 network. (In future versions this will be combined
     /// into a single variant containing the version)
     Testnet4,
+    /// Bitcoin's testnet5 network. (In future versions this will be combined
+    /// into a single variant containing the version)
+    Testnet5,
     /// Bitcoin's signet network.
     Signet,
     /// Bitcoin's regtest network.
@@ -129,6 +132,7 @@ impl Network {
             // For user-side compatibility, testnet3 is retained as test
             Network::Testnet => "test",
             Network::Testnet4 => "testnet4",
+            Network::Testnet5 => "testnet5",
             Network::Signet => "signet",
             Network::Regtest => "regtest",
         }
@@ -150,6 +154,7 @@ impl Network {
             "main" => Bitcoin,
             "test" => Testnet,
             "testnet4" => Testnet4,
+            "testnet5" => Testnet5,
             "signet" => Signet,
             "regtest" => Regtest,
             _ => return Err(ParseNetworkError(core_arg.to_owned())),
@@ -190,6 +195,7 @@ impl Network {
             Network::Bitcoin => &Params::BITCOIN,
             Network::Testnet => &Params::TESTNET3,
             Network::Testnet4 => &Params::TESTNET4,
+            Network::Testnet5 => &Params::TESTNET5,
             Network::Signet => &Params::SIGNET,
             Network::Regtest => &Params::REGTEST,
         }
@@ -202,6 +208,7 @@ impl Network {
             Network::Bitcoin => "bitcoin",
             Network::Testnet => "testnet",
             Network::Testnet4 => "testnet4",
+            Network::Testnet5 => "testnet5",
             Network::Signet => "signet",
             Network::Regtest => "regtest",
         }
@@ -235,7 +242,7 @@ pub mod as_core_arg {
                 Network::from_core_arg(s).map_err(|_| {
                     E::invalid_value(
                         serde::de::Unexpected::Str(s),
-                        &"bitcoin network encoded as a string (either main, test, testnet4, signet or regtest)",
+                        &"bitcoin network encoded as a string (either main, test, testnet4, testnet5, signet or regtest)",
                     )
                 })
             }
@@ -243,7 +250,7 @@ pub mod as_core_arg {
             fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
                 write!(
                     formatter,
-                    "bitcoin network encoded as a string (either main, test, testnet4, signet or regtest)"
+                    "bitcoin network encoded as a string (either main, test, testnet4, testnet5, signet or regtest)"
                 )
             }
         }
@@ -278,6 +285,7 @@ impl FromStr for Network {
             // For user-side compatibility, testnet3 is retained as testnet
             "testnet" => Ok(Network::Testnet),
             "testnet4" => Ok(Network::Testnet4),
+            "testnet5" => Ok(Network::Testnet5),
             "signet" => Ok(Network::Signet),
             "regtest" => Ok(Network::Regtest),
             _ => Err(ParseNetworkError(s.to_owned())),
@@ -316,6 +324,7 @@ impl TryFrom<ChainHash> for Network {
             ChainHash::BITCOIN => Ok(Network::Bitcoin),
             ChainHash::TESTNET3 => Ok(Network::Testnet),
             ChainHash::TESTNET4 => Ok(Network::Testnet4),
+            ChainHash::TESTNET5 => Ok(Network::Testnet5),
             ChainHash::SIGNET => Ok(Network::Signet),
             ChainHash::REGTEST => Ok(Network::Regtest),
             _ => Err(UnknownChainHashError(chain_hash)),
@@ -334,12 +343,14 @@ mod tests {
         assert_eq!(serialize(&Network::Bitcoin.magic()), &[0xf9, 0xbe, 0xb4, 0xd9]);
         assert_eq!(serialize(&Network::Testnet.magic()), &[0x0b, 0x11, 0x09, 0x07]);
         assert_eq!(serialize(&Network::Testnet4.magic()), &[0x1c, 0x16, 0x3f, 0x28]);
+        assert_eq!(serialize(&Network::Testnet5.magic()), &[0x46, 0x49, 0x56, 0x45]);
         assert_eq!(serialize(&Network::Signet.magic()), &[0x0a, 0x03, 0xcf, 0x40]);
         assert_eq!(serialize(&Network::Regtest.magic()), &[0xfa, 0xbf, 0xb5, 0xda]);
 
         assert_eq!(deserialize(&[0xf9, 0xbe, 0xb4, 0xd9]).ok(), Some(Network::Bitcoin.magic()));
         assert_eq!(deserialize(&[0x0b, 0x11, 0x09, 0x07]).ok(), Some(Network::Testnet.magic()));
         assert_eq!(deserialize(&[0x1c, 0x16, 0x3f, 0x28]).ok(), Some(Network::Testnet4.magic()));
+        assert_eq!(deserialize(&[0x46, 0x49, 0x56, 0x45]).ok(), Some(Network::Testnet5.magic()));
         assert_eq!(deserialize(&[0x0a, 0x03, 0xcf, 0x40]).ok(), Some(Network::Signet.magic()));
         assert_eq!(deserialize(&[0xfa, 0xbf, 0xb5, 0xda]).ok(), Some(Network::Regtest.magic()));
     }
@@ -349,12 +360,14 @@ mod tests {
         assert_eq!(Network::Bitcoin.to_string(), "bitcoin");
         assert_eq!(Network::Testnet.to_string(), "testnet");
         assert_eq!(Network::Testnet4.to_string(), "testnet4");
+        assert_eq!(Network::Testnet5.to_string(), "testnet5");
         assert_eq!(Network::Regtest.to_string(), "regtest");
         assert_eq!(Network::Signet.to_string(), "signet");
 
         assert_eq!("bitcoin".parse::<Network>().unwrap(), Network::Bitcoin);
         assert_eq!("testnet".parse::<Network>().unwrap(), Network::Testnet);
         assert_eq!("testnet4".parse::<Network>().unwrap(), Network::Testnet4);
+        assert_eq!("testnet5".parse::<Network>().unwrap(), Network::Testnet5);
         assert_eq!("regtest".parse::<Network>().unwrap(), Network::Regtest);
         assert_eq!("signet".parse::<Network>().unwrap(), Network::Signet);
         assert!("fakenet".parse::<Network>().is_err());
@@ -409,6 +422,7 @@ mod tests {
             (Bitcoin, "bitcoin"),
             (Testnet, "testnet"),
             (Testnet4, "testnet4"),
+            (Testnet5, "testnet5"),
             (Signet, "signet"),
             (Regtest, "regtest"),
         ];
@@ -431,6 +445,7 @@ mod tests {
             (Network::Bitcoin, "main"),
             (Network::Testnet, "test"),
             (Network::Testnet4, "testnet4"),
+            (Network::Testnet5, "testnet5"),
             (Network::Regtest, "regtest"),
             (Network::Signet, "signet"),
         ];

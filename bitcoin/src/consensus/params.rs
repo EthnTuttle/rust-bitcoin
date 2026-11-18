@@ -71,6 +71,8 @@ pub static TESTNET: Params = Params::TESTNET3;
 pub static TESTNET3: Params = Params::TESTNET3;
 /// The testnet4 parameters.
 pub static TESTNET4: Params = Params::TESTNET4;
+/// The testnet5 parameters.
+pub static TESTNET5: Params = Params::TESTNET5;
 /// The signet parameters.
 pub static SIGNET: Params = Params::SIGNET;
 /// The regtest parameters.
@@ -150,6 +152,23 @@ impl Params {
         no_pow_retargeting: false,
     };
 
+    /// The testnet5 parameters.
+    pub const TESTNET5: Params = Params {
+        network: Network::Testnet5,
+        bip16_time: 1333238400, // Apr 1 2012
+        bip34_height: 1,
+        bip65_height: 1,
+        bip66_height: 1,
+        rule_change_activation_threshold: 1512, // 75%
+        miner_confirmation_window: 2016,
+        pow_limit: Target::MAX_ATTAINABLE_TESTNET5,
+        max_attainable_target: Target::MAX_ATTAINABLE_TESTNET5,
+        pow_target_spacing: 10 * 60,            // 10 minutes.
+        pow_target_timespan: 14 * 24 * 60 * 60, // 2 weeks.
+        allow_min_difficulty_blocks: false,
+        no_pow_retargeting: false,
+    };
+
     /// The signet parameters.
     pub const SIGNET: Params = Params {
         network: Network::Signet,
@@ -190,6 +209,7 @@ impl Params {
             Network::Bitcoin => Params::MAINNET,
             Network::Testnet => Params::TESTNET3,
             Network::Testnet4 => Params::TESTNET4,
+            Network::Testnet5 => Params::TESTNET5,
             Network::Signet => Params::SIGNET,
             Network::Regtest => Params::REGTEST,
         }
@@ -223,4 +243,17 @@ impl AsRef<Params> for Params {
 
 impl AsRef<Params> for Network {
     fn as_ref(&self) -> &Params { Self::params(*self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn testnet5_proof_of_work_parameters() {
+        let params = Params::new(Network::Testnet5);
+        assert_eq!(params.max_attainable_target.to_compact_lossy().to_consensus(), 0x1a0fffff);
+        assert!(!params.allow_min_difficulty_blocks);
+        assert!(!params.no_pow_retargeting);
+    }
 }

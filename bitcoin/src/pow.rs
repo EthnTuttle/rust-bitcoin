@@ -170,6 +170,11 @@ impl Target {
     // https://github.com/bitcoin/bitcoin/blob/8105bce5b384c72cf08b25b7c5343622754e7337/src/kernel/chainparams.cpp#L348
     pub const MAX_ATTAINABLE_SIGNET: Self = Target(U256(0x0377_ae00 << 80, 0));
 
+    /// The proof of work limit on testnet5 (compact encoding 0x1a0fffff).
+    // Taken from Bitcoin Core but had lossy conversion to/from compact form.
+    // https://github.com/bitcoin/bitcoin/blob/a81e5c2d8a75c32b7a60775bdf41cc59629e495a/src/kernel/chainparams.cpp#L495
+    pub const MAX_ATTAINABLE_TESTNET5: Self = Target(U256(0x0F_FFFF_u128 << 56, 0));
+
     /// Computes the [`Target`] value from a compact representation.
     ///
     /// ref: <https://developer.bitcoin.org/reference/block_chain.html#target-nbits>
@@ -1188,6 +1193,15 @@ mod tests {
             ret.1 = (a[2] as u128) << 64 ^ (a[3] as u128);
             ret
         }
+    }
+
+    #[test]
+    fn testnet5_max_attainable_target_round_trips_through_compact() {
+        assert_eq!(Target::MAX_ATTAINABLE_TESTNET5.to_compact_lossy().to_consensus(), 0x1a0fffff);
+        assert_eq!(
+            Target::MAX_ATTAINABLE_TESTNET5,
+            Target::from_compact(CompactTarget::from_consensus(0x1a0fffff))
+        );
     }
 
     #[test]
